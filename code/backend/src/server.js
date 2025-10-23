@@ -22,7 +22,3 @@ app.listen(5001, ()=>{
     console.log("Server started on port 5001");
 })
 
-//
-//2h2lSmoIExtE3byZ
-
-//mongodb+srv://trial_user:2h2lSmoIExtE3byZ@cluster0.4na7c1n.mongodb.net/?appName=Cluster0
