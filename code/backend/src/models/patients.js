@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
+// Patient Schema Definition
 const patientSchema = new mongoose.Schema({
-    patientID: {
+    patientId: {
         type: String,
         required: true,
         unique: true
@@ -10,18 +11,19 @@ const patientSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    dob: {
-        type: Date,
-        required: true
+    dateOfBirth: {
+        type: Date
     },
     gender: {
-        type: String,
-        enum: ['Male', 'Female', 'Other'],
-        required: true
+        type: String
     },
-    report: {
-        type: String 
-    }
-}, { timestamps: true });
+    reports: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Report'
+    }]
+}, {
+    timestamps: true
+});
 
+// Create and export the Patient model
 module.exports = mongoose.model('Patient', patientSchema);

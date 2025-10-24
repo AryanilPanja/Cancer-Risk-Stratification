@@ -1,8 +1,18 @@
-import express from "express"
-import { uploadReports } from "../controller/pathologistController.js";
-
+const express = require('express');
 const router = express.Router();
+const pathologistController = require('../controller/pathologistController');
+const { authenticateToken, isPathologist } = require('../middleware/auth');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/upload", uploadReports);
+// Apply authentication middleware to all routes
+router.use(authenticateToken);
+router.use(isPathologist);
 
-export default router
+// POST /api/pathologist/upload - Upload new report
+router.post('/upload', upload.single('report'), pathologistController.uploadReport);
+
+// POST /api/pathologist/upload/confirm - Confirm upload for existing patient
+router.post('/upload/confirm', pathologistController.confirmUpload);
+
+module.exports = router;
