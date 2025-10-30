@@ -1,9 +1,10 @@
-// backend/server.js
-// Purpose: Updated to use a hardcoded JSON object and format it for the LLM.
-
 const express = require('express');
+const multer = require('multer');
 const axios = require('axios');
 const cors = require('cors');
+const { execFile } = require('child_process');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = 5000;
@@ -11,79 +12,117 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// 1. Hardcode the JSON object you provided
-const hardcodedReportJSON = {
-  "diagnosis": {
-    "title": "PAP DIAGNOSIS:",
-    "finding": "ATYPICAL SQUAMOUS CELLS OF UNDETERMINED SIGNIFICANCE (ASC-US)"
-  },
-  "results": {
-    "main_title": "Cytologic and Molecular Results",
-    "molecular_results": {
-      "title": "MOLECULAR RESULTS:",
-      "high_risk_hpv": "DETECTED",
-      "chlamydia_trachomatis": "not detected",
-      "neisseria_gonorrhoeae": "not detected",
-      "trichomonas_vaginalis": "not detected"
-    }
-  },
-  "findings": {
-    "title": "Additional Cytologic Findings",
-    "specimen_adequacy": "Satisfactory for evaluation.",
-    "transformation_zone": "Endocervical/transformation zone component present"
-  }
-};
+// Configure multer for file uploads
+const upload = multer({ dest: 'uploads/' });
 
-// 2. Helper function to format the JSON into a readable string context
-function formatJsonAsContext(report) {
-    let context = "";
-    context += `Diagnosis finding is ${report.diagnosis.finding}. `;
+// --- NEW HELPER FUNCTION: Convert JSON to readable text ---
+function formatJsonToTextContext(data) {
+    if (!data) return "No data available in the report.";
     
-    context += `Molecular Results: `;
-    context += `High Risk HPV result is ${report.results.molecular_results.high_risk_hpv}. `;
-    context += `Chlamydia Trachomatis result is ${report.results.molecular_results.chlamydia_trachomatis}. `;
-    context += `Neisseria Gonorrhoeae result is ${report.results.molecular_results.neisseria_gonorrhoeae}. `;
-    context += `Trichomonas Vaginalis result is ${report.results.molecular_results.trichomonas_vaginalis}. `;
-    
-    context += `Additional Findings: `;
-    context += `Specimen Adequacy is ${report.findings.specimen_adequacy}. `;
-    context += `Transformation Zone is ${report.findings.transformation_zone}.`;
-    
-    return context;
+    // Use the specific fields from your TARGET_SCHEMA
+    const diagnosis = data.diagnosis?.finding || 'not specified';
+    const hpv = data.results?.molecular_results?.high_risk_hpv || 'not tested';
+    const chlamydia = data.results?.molecular_results?.chlamydia_trachomatis || 'not tested';
+    const adequacy = data.findings?.specimen_adequacy || 'unknown';
+    const tz = data.findings?.transformation_zone || 'absent';
+
+    // Create a coherent text block
+    return `
+        PAP DIAGNOSIS: The finding is **${diagnosis}**. 
+        
+        MOLECULAR RESULTS: 
+        High-Risk HPV result is **${hpv}**. 
+        Chlamydia Trachomatis is **${chlamydia}**. 
+        Neisseria Gonorrhoeae is **${data.results?.molecular_results?.neisseria_gonorrhoeae || 'not tested'}**. 
+        Trichomonas Vaginalis is **${data.results?.molecular_results?.trichomonas_vaginalis || 'not tested'}**.
+        
+        ADDITIONAL FINDINGS: 
+        Specimen adequacy is **${adequacy}**. 
+        Transformation zone component is **${tz}**.
+    `.trim();
+}
+// ----------------------------------------------------------
+
+// Helper function to execute the OCR service
+function runOCRService(pdfPath) {
+    // ... (keep this function as is) ...
+    return new Promise((resolve, reject) => {
+        const scriptPath = path.join(__dirname, '..', 'ocr_service', 'pdf_extractor.py');
+        execFile('/usr/bin/python3', [scriptPath, pdfPath], (error, stdout, stderr) => {
+            if (error) {
+                console.error('Error executing OCR service:', stderr);
+                return reject(error);
+            }
+            try {
+                // Handle cases where stdout might contain extra print statements, only try to parse the last JSON
+                let jsonStr = stdout.trim();
+                // Simple attempt to find the last valid JSON block if there's print noise
+                const lastBrace = jsonStr.lastIndexOf('}');
+                const firstBrace = jsonStr.indexOf('{');
+                if (lastBrace > firstBrace) {
+                    jsonStr = jsonStr.substring(firstBrace, lastBrace + 1);
+                }
+                
+                const result = JSON.parse(jsonStr);
+                resolve(result);
+            } catch (parseError) {
+                console.error('Error parsing OCR service output:', parseError.message);
+                console.error('Raw stdout:', stdout);
+                reject(parseError);
+            }
+        });
+    });
 }
 
-app.get('/api/process-report', async (req, res) => {
-    console.log("Received request from React...");
+// Endpoint to process the uploaded PDF
+app.post('/api/process-report', upload.single('pdf'), async (req, res) => {
+  const { question } = req.body;
+  const pdfPath = req.file?.path;
 
-    const pythonLLMServiceUrl = 'http://localhost:8000/ask';
-    
-    // 3. Use the helper function to create the context string
-    const reportContextString = formatJsonAsContext(hardcodedReportJSON);
-    
-    // You can try different questions here!
-    const questionToAsk = "What is the High Risk HPV result?";
-    // const questionToAsk = "What is the Pap diagnosis?";
+  console.log('Received request with question:', question);
+  console.log('Uploaded file path:', pdfPath);
 
-    console.log("--- Generated Context String ---");
-    console.log(reportContextString);
-    console.log("---------------------------------");
+  if (!pdfPath || !question) {
+      console.error('Missing PDF file or question');
+      return res.status(400).json({ error: 'PDF file and question are required.' });
+  }
 
-    try {
-        console.log("Sending data to Python LLM service...");
-        const response = await axios.post(pythonLLMServiceUrl, {
-            context: reportContextString, // <-- Use the formatted string here
-            question: questionToAsk
-        });
+  try {
+      console.log('Running OCR service...');
+      const ocrResult = await runOCRService(pdfPath);
+      console.log('OCR service completed. Result (JSON):', ocrResult);
 
-        res.json({
-            question: questionToAsk,
-            ...response.data
-        });
+      // --- CRITICAL CHANGE 1: Format JSON to text ---
+      const textContext = formatJsonToTextContext(ocrResult);
+      console.log('Context for LLM (Text):', textContext);
+      
+      // --- CRITICAL CHANGE 2: Fix the connection host ---
+      const llmServiceUrl = 'http://127.0.0.1:8000/ask'; 
+      
+      const response = await axios.post(llmServiceUrl, {
+          context: textContext, // Send the readable text
+          question: question,
+      });
 
-    } catch (error) {
-        console.error("Error communicating with Python service:", error.message);
-        res.status(500).json({ error: "Failed to process report" });
-    }
+      console.log('LLM service response:', response.data);
+
+      // Clean up the uploaded file
+      fs.unlinkSync(pdfPath);
+
+      // --- MINOR FIX: Adjust response field names ---
+      // Your LLM service returns 'answer' and 'score', not 'confidence' and 'answer'
+      res.json({
+          confidence: response.data.score,
+          answer: response.data.answer,
+      });
+  } catch (error) {
+      console.error('Error processing report:', error.message);
+      // Log the specific response error if available for better debugging
+      if (error.response) {
+          console.error('LLM Service Response Error:', error.response.data);
+      }
+      res.status(500).json({ error: 'Failed to process report' });
+  }
 });
 
 app.listen(PORT, () => {
