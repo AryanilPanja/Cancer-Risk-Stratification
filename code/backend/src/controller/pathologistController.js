@@ -3,6 +3,7 @@ const Report = require('../models/reports');
 const { performOCR } = require('../services/ocrService');
 const { generateLLMReport } = require('../services/llmService');
 const { uploadToStorage } = require('../services/storageService');
+const { ensurePatient, createReportForPatient } = require('../services/reportService');
 
 const pathologistController = {
     // Upload new report
@@ -16,47 +17,34 @@ const pathologistController = {
             // Upload file to storage
             const reportUrl = await uploadToStorage(file);
 
-            // Perform OCR on the report
-            const ocrResult = await performOCR(reportUrl);
+            // TEMPORARILY SKIP OCR - use dummy data for testing
+            const ocrResult = 'Dummy OCR text - OCR disabled for testing. Patient: Test Patient, Age: 45, Gender: Male';
             
             // Extract patient details from OCR text
             const patientDetails = extractPatientDetails(ocrResult);
-            
-            // Check if patient exists
-            const existingPatient = await Patient.findOne({ patientId: patientDetails.patientId });
-            
-            if (existingPatient) {
+
+            // Ensure patient exists (create if not)
+            const { patient, existed } = await ensurePatient(patientDetails);
+
+            if (existed) {
                 return res.status(200).json({
                     message: 'Patient already exists. Do you want to submit an updated report?',
-                    patientId: existingPatient.patientId
+                    patientId: patient.patientId
                 });
             }
 
-            // Create new patient
-            const patient = await Patient.create({
-                patientId: patientDetails.patientId,
-                name: patientDetails.name,
-                dateOfBirth: patientDetails.dateOfBirth,
-                gender: patientDetails.gender
-            });
+            // TEMPORARILY SKIP LLM - use dummy data for testing
+            const llmResult = { report: 'Dummy LLM report - LLM disabled for testing', score: 0.5 };
 
-            // Generate LLM Report
-            const llmResult = await generateLLMReport(ocrResult);
-
-            // Create new report
-            const report = await Report.create({
-                patient: patient._id,
+            // Create new report and attach to patient
+            const report = await createReportForPatient({
+                patient,
                 uploadedBy: req.user._id,
                 originalReportUrl: reportUrl,
                 ocrText: ocrResult,
                 llmGeneratedReport: llmResult.report,
                 normalizedScore: llmResult.score,
                 status: 'In Progress'
-            });
-
-            // Update patient's reports array
-            await Patient.findByIdAndUpdate(patient._id, {
-                $push: { reports: report._id }
             });
 
             res.status(201).json({
@@ -79,20 +67,15 @@ const pathologistController = {
                 return res.status(404).json({ message: 'Patient not found' });
             }
 
-            // Create new report
-            const report = await Report.create({
-                patient: patient._id,
+            // Create new report and attach to patient
+            const report = await createReportForPatient({
+                patient,
                 uploadedBy: req.user._id,
                 originalReportUrl: reportData.reportUrl,
                 ocrText: reportData.ocrText,
                 llmGeneratedReport: reportData.llmReport,
                 normalizedScore: reportData.score,
                 status: 'In Progress'
-            });
-
-            // Update patient's reports array
-            await Patient.findByIdAndUpdate(patient._id, {
-                $push: { reports: report._id }
             });
 
             res.status(200).json({
