@@ -4,9 +4,9 @@ import { useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
-import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { PathologistUpload } from './pages/PathologistUpload';
+import {Login} from './pages/Login';
+import  Register from './pages/Register';
+import { PathologistDashboard} from './pages/PathologistDashboard';
 import './App.css';
 
 function App() {
@@ -30,7 +30,7 @@ function App() {
               path="/upload"
               element={
                 <ProtectedRoute requiredRole="pathologist">
-                  <PathologistUpload />
+                  <PathologistDashboard/>
                 </ProtectedRoute>
               }
             />

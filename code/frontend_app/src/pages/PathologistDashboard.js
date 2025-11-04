@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { reportService } from '../services/reportService';
 import './PathologistUpload.css';
 
-export const PathologistUpload = () => {
+export const PathologistDashboard = () => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState('');

@@ -89,6 +89,40 @@ const pathologistController = {
     }
 };
 
+const fs = require('fs');
+const path = require('path');
+
+pathologistController.testOCR = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded.' });
+        }
+
+        // Save the uploaded buffer temporarily (since you're using memoryStorage)
+        const tempPath = path.join(__dirname, '../../uploads', req.file.originalname);
+        fs.writeFileSync(tempPath, req.file.buffer);
+
+        // Perform OCR using the OCR.space API
+        const extractedText = await performOCR(tempPath);
+
+        // Delete temp file after processing
+        fs.unlinkSync(tempPath);
+
+        // Return text and word count
+        const wordCount = extractedText.split(/\s+/).filter(Boolean).length;
+        res.status(200).json({
+            message: 'OCR extraction successful.',
+            wordCount,
+            extractedText
+        });
+    } catch (error) {
+        console.error('OCR test error:', error.message);
+        res.status(500).json({ message: 'OCR failed', error: error.message });
+    }
+};
+
+
+
 // Helper function to extract patient details from OCR text
 function extractPatientDetails(ocrText) {
     // TODO: Implement patient detail extraction logic

@@ -1,0 +1,30 @@
+{
+  "diagnosis": {
+    "title": "PAPI DIAGNOSIS",
+    "finding": "ATYPICAL SQUAMOUSS CELLS OF UNDETERMINED SIGNIFICANCE (ASC-US)"
+  },
+  "results": {
+    "main_title": "Cytokologic and Molecular Results",
+    "molecular_results": {
+      "title": "MOLECULAR RESULTS:",
+      "high_risk_hpv": "DETECTED",
+      "chlamydia_trachomatis": "not detected",
+      "neisseria_gonorrheae": "not detected",
+      "trichoomonas_vaginalis": "not detected"
+    },
+    "findings": {
+      "title": "Additional Cytokologic Findings",
+      "specimen_adequacies": {
+        "title": "Specimen Adequacy:",
+        "safe for evaluation": "Safe for evaluation."
+      }
+    }
+  },
+  "findings": {
+    "title": "Additional Cytokologic Findings",
+    "specimen_adequacies": {
+      "title": "Specimen Adequacy:",
+      "safe for evaluation": "Safe for evaluation."
+    }
+  }
+}

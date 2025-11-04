@@ -1,36 +1,38 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/authService';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './Auth.css';
 
-export const Register = () => {
+function Register() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('pathologist');
-  const [error, setError] = useState('');
+  const [role, setRole] = useState('doctor');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    // Basic input validation
+    if (!username || !password) {
+      alert('Please enter both username and password.');
       return;
     }
 
     setLoading(true);
-
     try {
-      const response = await authService.register(username, password, role);
-      login(response.user, response.token);
-      navigate(role === 'pathologist' ? '/upload' : '/reports');
+      const response = await axios.post('http://localhost:5001/api/auth/register', { username, password, role });
+      console.log('Register success:', response.data);
+
+      alert('✅ Registration successful! You can now log in.');
+      navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', err.response?.data || err.message);
+      if (err.response?.status === 400) {
+        alert('⚠️ Username already exists or invalid input.');
+      } else {
+        alert('❌ Error registering user. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -38,62 +40,40 @@ export const Register = () => {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <h1>📝 Register</h1>
+      <h2>Register</h2>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Username"
+          autoComplete="username"
+        />
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
+          autoComplete="new-password"
+        />
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="doctor">Doctor</option>
+          <option value="pathologist">Pathologist</option>
+          <option value="admin">Admin</option>
+        </select>
 
-        {error && <div className="error-message">{error}</div>}
+        <button type="submit" disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
+        </button>
+      </form>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Choose a username"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Role</label>
-            <select value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="pathologist">Pathologist</option>
-              <option value="doctor">Doctor</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              required
-            />
-          </div>
-
-          <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? 'Registering...' : 'Register'}
-          </button>
-        </form>
-
-        <div className="auth-link">
-          Already have an account? <Link to="/login">Login here</Link>
-        </div>
-      </div>
+      <p>
+        Already have an account?{' '}
+        <a href="/login" style={{ textDecoration: 'none', color: '#007bff' }}>
+          Login
+        </a>
+      </p>
     </div>
   );
-};
+}
+
+export default Register;

@@ -15,4 +15,7 @@ router.post('/upload', upload.single('report'), pathologistController.uploadRepo
 // POST /api/pathologist/upload/confirm - Confirm upload for existing patient
 router.post('/upload/confirm', pathologistController.confirmUpload);
 
+router.post('/ocr', upload.single('file'), pathologistController.testOCR);
+
+
 module.exports = router;
