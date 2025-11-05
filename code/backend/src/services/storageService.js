@@ -1,24 +1,30 @@
-const fs = require('fs');
-const path = require('path');
+// src/services/storageService.js
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { v4: uuidv4 } = require("uuid");
+require("dotenv").config();
 
-// Save uploaded file to local uploads directory and return the absolute file path.
-// The caller may expose the file via a static route if needed.
-exports.uploadToStorage = async (file) => {
-  try {
-    const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+const s3 = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
     }
+});
 
-    const filename = `${Date.now()}-${file.originalname}`;
-    const savePath = path.join(uploadsDir, filename);
+const BUCKET = process.env.AWS_BUCKET_NAME;
 
-    await fs.promises.writeFile(savePath, file.buffer);
+async function uploadToStorage(file) {
+    const key = `${uuidv4()}-${file.originalname}`;
+    const params = {
+        Bucket: BUCKET,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype
+    };
 
-    // Return the local filesystem path so downstream can call OCR or store reference.
-    return savePath;
-  } catch (error) {
-    console.error('Storage error:', error);
-    throw new Error('Failed to save uploaded file');
-  }
-};
+    await s3.send(new PutObjectCommand(params));
+
+    return `https://${BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+}
+
+module.exports = { uploadToStorage };
