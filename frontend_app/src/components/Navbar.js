@@ -16,7 +16,7 @@ export const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          <span className="brand-icon">🏥</span>
+          <span className="brand-icon"></span>
           Cancer Risk Stratification
         </Link>
 
@@ -24,7 +24,7 @@ export const Navbar = () => {
           {isAuthenticated ? (
             <>
               <span className="user-info">
-                👤 {user?.username} ({user?.role})
+                {user?.username} ({user?.role})
               </span>
               {user?.role === 'pathologist' && (
                 <Link to="/upload" className="nav-link">
