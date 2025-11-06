@@ -7,6 +7,7 @@ import './Auth.css';
 export const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export const Login = () => {
         navigate('/upload');
       } else if (response.user.role === 'doctor') {
         navigate('/reports');
+      } else if (response.user.role === 'admin') {
+        navigate('/admin');
       } else {
         navigate('/');
       }
@@ -39,18 +42,21 @@ export const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>🔐 Login</h1>
+        <div className="auth-header">
+          <h1>Cancer Report Stratification System</h1>
+          <p className="auth-subtitle">Sign in to continue</p>
+        </div>
         
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label>Username</label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
+              placeholder=""
               required
             />
           </div>
@@ -61,13 +67,27 @@ export const Login = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder=""
               required
             />
           </div>
 
+          <div className="form-group">
+            <label>Role</label>
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              required
+            >
+              <option value="">Select your role</option>
+              <option value="pathologist">Pathologist</option>
+              <option value="doctor">Doctor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
           <button type="submit" disabled={loading} className="submit-btn">
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 

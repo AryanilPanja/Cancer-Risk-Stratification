@@ -81,12 +81,12 @@ export const PathologistDashboard = () => {
   return (
     <div className="upload-container">
       <div className="upload-card">
-        <h1>📋 Upload Pathology Report</h1>
+        <h1>Upload Pathology Report</h1>
 
         <form onSubmit={handleSubmit} className="upload-form">
           <div className="file-input-wrapper">
             <label htmlFor="file-input" className="file-label">
-              <span className="upload-icon">📁</span>
+              <span className="upload-icon">+</span>
               <span className="upload-text">
                 {file ? `Selected: ${file.name}` : 'Click to select a file or drag and drop'}
               </span>
@@ -123,7 +123,7 @@ export const PathologistDashboard = () => {
 
           {uploadedReport && (
             <div className="report-details">
-              <h3>📊 Report Details</h3>
+              <h3>Report Details</h3>
               <p><strong>Report ID:</strong> {uploadedReport.reportId}</p>
               <p><strong>Status:</strong> In Progress</p>
               <p className="info-text">
@@ -142,7 +142,7 @@ export const PathologistDashboard = () => {
         </form>
 
         <div className="upload-info">
-          <h3>ℹ️ Information</h3>
+          <h3>Information</h3>
           <ul>
             <li>Supported formats: JPG, PNG, PDF</li>
             <li>Maximum file size: 10 MB</li>

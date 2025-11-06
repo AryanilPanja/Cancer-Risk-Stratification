@@ -45,32 +45,34 @@ export const Home = () => {
         )}
       </div>
 
-      {/* How It Works Section */}
-      <div className="info-section">
-        <h2>How It Works</h2>
-        <div className="steps">
-          <div className="step">
-            <div className="step-number">1</div>
-            <h4>Upload Report</h4>
-            <p>Pathologist uploads a pathology report image or PDF</p>
-          </div>
-          <div className="step">
-            <div className="step-number">2</div>
-            <h4>Process</h4>
-            <p>System performs OCR extraction and LLM analysis</p>
-          </div>
-          <div className="step">
-            <div className="step-number">3</div>
-            <h4>Store</h4>
-            <p>Results stored in MongoDB with patient information</p>
-          </div>
-          <div className="step">
-            <div className="step-number">4</div>
-            <h4>Review</h4>
-            <p>Doctor reviews and verifies the analysis</p>
+      {/* How It Works Section - show only to unauthenticated visitors */}
+      {!isAuthenticated && (
+        <div className="info-section">
+          <h2>How It Works</h2>
+          <div className="steps">
+            <div className="step">
+              <div className="step-number">1</div>
+              <h4>Upload Report</h4>
+              <p>Pathologist uploads a pathology report image or PDF</p>
+            </div>
+            <div className="step">
+              <div className="step-number">2</div>
+              <h4>Process</h4>
+              <p>System performs OCR extraction and LLM analysis</p>
+            </div>
+            <div className="step">
+              <div className="step-number">3</div>
+              <h4>Store</h4>
+              <p>Results stored in MongoDB with patient information</p>
+            </div>
+            <div className="step">
+              <div className="step-number">4</div>
+              <h4>Review</h4>
+              <p>Doctor reviews and verifies the analysis</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

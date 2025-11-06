@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Auth.css';
 
 function Register() {
@@ -24,14 +24,14 @@ function Register() {
       const response = await axios.post('http://localhost:5001/api/auth/register', { username, password, role });
       console.log('Register success:', response.data);
 
-      alert('✅ Registration successful! You can now log in.');
+      alert('Registration successful! You can now log in.');
       navigate('/login');
     } catch (err) {
       console.error('Registration error:', err.response?.data || err.message);
       if (err.response?.status === 400) {
-        alert('⚠️ Username already exists or invalid input.');
+        alert('Username already exists or invalid input.');
       } else {
-        alert('❌ Error registering user. Please try again.');
+        alert('Error registering user. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -40,38 +40,51 @@ function Register() {
 
   return (
     <div className="auth-container">
-      <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          autoComplete="username"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          autoComplete="new-password"
-        />
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="doctor">Doctor</option>
-          <option value="pathologist">Pathologist</option>
-          <option value="admin">Admin</option>
-        </select>
+      <div className="auth-card">
+        <div className="auth-header">
+          <h1>Register</h1>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              autoComplete="username"
+              required
+            />
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
+          <div className="form-group">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              autoComplete="new-password"
+              required
+            />
+          </div>
 
-      <p>
-        Already have an account?{' '}
-        <a href="/login" style={{ textDecoration: 'none', color: '#007bff' }}>
-          Login
-        </a>
-      </p>
+          <div className="form-group">
+            <select value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="doctor">Doctor</option>
+              <option value="pathologist">Pathologist</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+          <button type="submit" disabled={loading} className="submit-btn">
+            {loading ? 'Registering...' : 'Register'}
+          </button>
+        </form>
+
+        <div className="auth-link">
+          Already have an account? <Link to="/login">Login</Link>
+        </div>
+      </div>
     </div>
   );
 }
