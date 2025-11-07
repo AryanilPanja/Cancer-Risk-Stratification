@@ -61,11 +61,12 @@ export const PathologistDashboard = () => {
       setFile(null);
       setUploadProgress(0);
 
+      // Auto-dismiss after 30 seconds to give time to read the score
       setTimeout(() => {
         setMessage('');
         setUploadedReport(null);
         e.target.reset();
-      }, 5000);
+      }, 30000);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -125,9 +126,12 @@ export const PathologistDashboard = () => {
             <div className="report-details">
               <h3>Report Details</h3>
               <p><strong>Report ID:</strong> {uploadedReport.reportId}</p>
-              <p><strong>Status:</strong> In Progress</p>
+              <p><strong>Status:</strong> Completed</p>
+              {uploadedReport.score !== undefined && (
+                <p><strong>Risk Score:</strong> {(uploadedReport.score * 100).toFixed(2)}%</p>
+              )}
               <p className="info-text">
-                Your report has been submitted for processing. An LLM analysis and OCR extraction will be performed.
+                Your report has been submitted and analyzed successfully. The BioBERT model has generated a risk assessment.
               </p>
             </div>
           )}
