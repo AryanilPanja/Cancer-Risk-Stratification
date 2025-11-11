@@ -47,30 +47,22 @@ def init_db():
     cur = conn.cursor()
     try:
         cur.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-        conn.commit()
     except Exception as e:
         # Some managed PGs may not allow extension creation; print and continue
         print("[Retriever] Warning: could not create extension (maybe already exists or not allowed):", e)
-        conn.rollback()
-    
-    try:
-        cur.execute(f"""
-        CREATE TABLE IF NOT EXISTS report_chunks (
-            id SERIAL PRIMARY KEY,
-            doc_id TEXT,
-            chunk_text TEXT,
-            embedding VECTOR({EMBED_DIM}),
-            created_at TIMESTAMP DEFAULT NOW()
-        );
-        """)
-        conn.commit()
-        print("[Retriever] DB initialized.")
-    except Exception as e:
-        print("[Retriever] Error creating table:", e)
-        conn.rollback()
-    finally:
-        cur.close()
-        conn.close()
+    cur.execute(f"""
+    CREATE TABLE IF NOT EXISTS report_chunks (
+        id SERIAL PRIMARY KEY,
+        doc_id TEXT,
+        chunk_text TEXT,
+        embedding VECTOR({EMBED_DIM}),
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("[Retriever] DB initialized.")
 
 init_db()
 
