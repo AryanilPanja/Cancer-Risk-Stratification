@@ -6,8 +6,8 @@ const FormData = require('form-data');
 const Patient = require('../models/patients');
 const Report = require('../models/reports');
 
-const OCR_API = process.env.OCR_API || "http://127.0.0.1:7000/ocr";
-const RETRIEVER_API = process.env.RETRIEVER_API || "http://127.0.0.1:9000/analyze";
+const OCR_API = process.env.OCR_API || "http://0.0.0.0:7000/ocr";
+const RETRIEVER_API = process.env.RETRIEVER_API || "http://0.0.0.0:9000/analyze";
 
 let uploadToStorage, ensurePatient, createReportForPatient;
 try {
@@ -131,12 +131,17 @@ const pathologistController = {
 };
 
 function extractPatientDetails(ocrText) {
-    // For now we return a stub — replace with regex/NER later
+    // Extract Name, Gender, and Date of Birth using regex
+    const nameMatch = ocrText.match(/Name:\s*([A-Za-z\s]+)/i);
+    const genderMatch = ocrText.match(/Gender:\s*(Male|Female|Other|M|F)/i);
+    const dobMatch = ocrText.match(/(?:DOB|Date of Birth):\s*([0-9]{2}[-/][0-9]{2}[-/][0-9]{2,4})/i);
+
+    // Return parsed fields or defaults if not found
     return {
-        patientId: 'EXTRACTED_ID_' + Date.now(),
-        name: 'EXTRACTED_NAME',
-        dateOfBirth: new Date(),
-        gender: 'UNKNOWN'
+        patientId: 'PAT_' + Date.now(),
+        name: nameMatch ? nameMatch[1].trim() : 'Unknown',
+        gender: genderMatch ? genderMatch[1].replace(/M/i, 'Male').replace(/F/i, 'Female') : 'Unknown',
+        dateOfBirth: dobMatch ? new Date(dobMatch[1]) : null
     };
 }
 

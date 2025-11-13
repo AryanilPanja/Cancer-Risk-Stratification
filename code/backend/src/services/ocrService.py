@@ -1,51 +1,4 @@
-# # ocrService.py
-# from fastapi import FastAPI, UploadFile, File
-# import fitz  # PyMuPDF
-# import uvicorn
-# import json
-# import tempfile
-# import requests
 
-# OLLAMA_HOST = "http://localhost:11434"
-# OLLAMA_MODEL = "tinyllama"
-
-# TARGET_SCHEMA = {
-#     "diagnosis": {
-#         "title": "PAP DIAGNOSIS:",
-#         "finding": "ATYPICAL SQUAMOUS CELLS OF UNDETERMINED SIGNIFICANCE (ASC-US)"
-#     },
-#     "results": {
-#         "main_title": "Cytologic and Molecular Results",
-#         "molecular_results": {
-#             "title": "MOLECULAR RESULTS:",
-#             "high_risk_hpv": "DETECTED",
-#             "chlamydia_trachomatis": "not detected",
-#             "neisseria_gonorrhoeae": "not detected",
-#             "trichomonas_vaginalis": "not detected"
-#         }
-#     },
-#     "findings": {
-#         "title": "Additional Cytologic Findings",
-#         "specimen_adequacy": "Satisfactory for evaluation.",
-#         "transformation_zone": "Endocervical/transformation zone component present"
-#     }
-# }
-
-# app = FastAPI()
-
-# def extract_text_from_pdf(pdf_path):
-#     text = ""
-#     doc = fitz.open(pdf_path)
-#     for page in doc:
-#         text += page.get_text()
-#     doc.close()
-#     return text
-
-# def extract_structured_data_with_llm(raw_text, schema, model_name):
-#     system_prom_
-
-
-# ocrService.py
 import os
 import tempfile
 import json
@@ -56,7 +9,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 OCR_PORT = int(os.getenv("OCR_PORT", 7000))
-RETRIEVER_API = os.getenv("RETRIEVER_API", "http://127.0.0.1:9000/analyze")
+RETRIEVER_API = os.getenv("RETRIEVER_API", "http://0.0.0.0:9000/analyze")
 FORWARD_TO_RETRIEVER = os.getenv("FORWARD_TO_RETRIEVER", "true").lower() in ("1", "true", "yes")
 TIMEOUT = int(os.getenv("OCR_FORWARD_TIMEOUT", 30))
 
@@ -120,6 +73,6 @@ async def process_ocr(file: UploadFile = File(...)):
         return {"error": str(e)}
 
 if __name__ == "__main__":
-    print(f"[OCR] Starting OCR service on 127.0.0.1:{OCR_PORT}")
-    uvicorn.run(app, host="127.0.0.1", port=OCR_PORT)
+    print(f"[OCR] Starting OCR service on 0.0.0.0:{OCR_PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=OCR_PORT)
 

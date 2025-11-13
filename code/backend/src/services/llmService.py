@@ -74,6 +74,6 @@ def ask_biobert(query: Query):
         return {"error": str(e)}
 
 if __name__ == "__main__":
-    print(f"[LLM] Starting LLM service on 127.0.0.1:{LLM_PORT}")
-    uvicorn.run(app, host="127.0.0.1", port=LLM_PORT)
+    print(f"[LLM] Starting LLM service on 0.0.0.0:{LLM_PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=LLM_PORT)
 

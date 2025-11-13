@@ -17,10 +17,10 @@ DB_NAME = os.getenv("DB_NAME", "rag_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "yourpassword")
 RETRIEVER_PORT = int(os.getenv("RETRIEVER_PORT", 9000))
-BIOBERT_API = os.getenv("BIOBERT_API", "http://127.0.0.1:8000/ask")
+BIOBERT_API = os.getenv("BIOBERT_API", "http://0.0.0.0:8000/ask")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 EMBED_DIM = int(os.getenv("EMBED_DIM", 384))
-RISK_QUESTION = os.getenv("RISK_QUESTION", "Assess the risk of high-grade cervical lesions based on this report.")
+RISK_QUESTION = os.getenv("RISK_QUESTION", "Assess the risk of high-grade cervical lesions based on this report")
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 500))
 TOP_K = int(os.getenv("TOP_K", 3))
 
@@ -36,10 +36,23 @@ print("[Retriever] Loading embedder model:", EMBEDDING_MODEL)
 embedder = SentenceTransformer(EMBEDDING_MODEL)
 print("[Retriever] Embedder ready.")
 
-def get_conn():
-    return psycopg2.connect(
-        host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD
-    )
+DB_PORT = int(os.getenv("DB_PORT", 5432))  # read port from environment
+
+def get_conn(retries=5, delay=3):
+    for i in range(retries):
+        try:
+            return psycopg2.connect(
+                host=DB_HOST,
+                port=DB_PORT,
+                database=DB_NAME,
+                user=DB_USER,
+                password=DB_PASSWORD
+            )
+        except psycopg2.OperationalError as e:
+            print(f"[Retriever] DB connection failed (attempt {i+1}/{retries}): {e}")
+            time.sleep(delay)
+    raise Exception(f"[Retriever] Could not connect to DB after {retries} attempts")
+
 
 def init_db():
     print("[Retriever] Ensuring pgvector extension and table exist...")
@@ -99,7 +112,7 @@ def store_embeddings(doc_id: str, text: str):
         conn.close()
     return inserted
 
-def retrieve_context(query: str, top_k: int = TOP_K):
+def retrieve_context(query: str, doc_id: str, top_k: int = TOP_K):
     q_emb = embedder.encode([query])[0]
     q_emb_list = [float(x) for x in q_emb.tolist()]
     q_emb_str = "[" + ",".join(map(str, q_emb_list)) + "]"
@@ -109,16 +122,28 @@ def retrieve_context(query: str, top_k: int = TOP_K):
     sql = f"""
         SELECT chunk_text, (embedding <=> '{q_emb_str}') AS dist
         FROM report_chunks
+        WHERE doc_id = %s
         ORDER BY dist ASC
         LIMIT %s;
     """
-    cur.execute(sql, (top_k,))
+    cur.execute(sql, (doc_id, top_k))
     rows = cur.fetchall()
     cur.close()
     conn.close()
-    context = "\n".join([r[0] for r in rows])
-    print(f"[Retriever] Retrieved {len(rows)} chunks (top_k={top_k})")
+
+    if not rows:
+        print(f"[Retriever] No matching chunks found for doc_id={doc_id}")
+        return ""  # safely return empty string
+
+    try:
+        context = "\n".join([r[0] for r in rows if len(r) > 0])
+    except Exception as e:
+        print(f"[Retriever] Error building context: {e}")
+        context = ""
+
+    print(f"[Retriever] Retrieved {len(rows)} chunks (top_k={top_k}) for doc_id={doc_id}")
     return context
+
 
 def ask_biobert(context: str, question: str, timeout=30):
     try:
@@ -149,7 +174,8 @@ def analyze_report(request: AnalyzeRequest):
         count = store_embeddings(doc_id, report_text)
 
         # 2) retrieve context for risk question
-        context = retrieve_context(RISK_QUESTION, top_k=TOP_K)
+        context = retrieve_context(RISK_QUESTION, doc_id, top_k=TOP_K)
+
 
         # if no context found, fallback to entire report_text
         if not context:
@@ -158,8 +184,19 @@ def analyze_report(request: AnalyzeRequest):
 
         # 3) call LLM (BioBERT)
         result = ask_biobert(context, RISK_QUESTION)
-        answer = result.get("answer", "No answer")
-        score = float(result.get("score", 0.0))
+        print("[Retriever] BioBERT raw response:", result)
+        answer = result.get("answer", "No answer").lower()
+        # interpret answer semantically
+        score=0
+        if "high" in answer:
+            score = 9.0
+        elif "moderate" in answer or "intermediate" in answer:
+            score = 6.0
+        elif "low" in answer:
+            score = 2.0
+        else:
+            score = 5.0  
+
 
         return {
             "doc_id": doc_id,
@@ -175,5 +212,5 @@ def analyze_report(request: AnalyzeRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    print(f"[Retriever] Starting service on 127.0.0.1:{RETRIEVER_PORT}")
-    uvicorn.run(app, host="127.0.0.1", port=RETRIEVER_PORT)
+    print(f"[Retriever] Starting service on 0.0.0.0:{RETRIEVER_PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=RETRIEVER_PORT)
