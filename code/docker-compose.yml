@@ -2,9 +2,11 @@ version: "3.9"
 
 services:
   node-backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
+    image: snigdha1403/cancer-risk-backend:latest
+    # Uncomment the build section below if you want to rebuild instead of pulling the image
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.backend
     ports:
       - "5001:5001"
     working_dir: /app
@@ -25,10 +27,12 @@ services:
       backend_net:
 
   retriever:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-      target: retriever
+    image: snigdha1403/cancer-risk-python:retriever
+    # Uncomment the build section below if you want to rebuild instead of pulling the image
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.python
+    #   target: retriever
     ports:
       - "8500:9000"
     working_dir: /app
@@ -49,10 +53,12 @@ services:
       backend_net:
 
   llm:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-      target: llm
+    image: snigdha1403/cancer-risk-python:llm
+    # Uncomment the build section below if you want to rebuild instead of pulling the image
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.python
+    #   target: llm
     ports:
       - "8001:8000" # Host port changed from 8000 to 8001
     working_dir: /app
@@ -63,10 +69,12 @@ services:
       backend_net:
 
   ocr:
-    build:
-      context: .
-      dockerfile: Dockerfile.python
-      target: ocr
+    image: snigdha1403/cancer-risk-python:ocr
+    # Uncomment the build section below if you want to rebuild instead of pulling the image
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.python
+    #   target: ocr
     ports:
       - "7000:7000"
     working_dir: /app
@@ -92,7 +100,7 @@ services:
   mongo:
     image: mongo:5
     ports:
-      - "27017:27017"
+      - "27018:27017"
     volumes:
       - ./mongo-data:/data/db
     networks:
