@@ -9,7 +9,7 @@ from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 
 OCR_PORT = int(os.getenv("OCR_PORT", 7000))
-RETRIEVER_API = os.getenv("RETRIEVER_API", "http://0.0.0.0:9000/analyze")
+RETRIEVER_API = os.getenv("RETRIEVER_API", "http://retriever:9000/analyze")
 FORWARD_TO_RETRIEVER = os.getenv("FORWARD_TO_RETRIEVER", "true").lower() in ("1", "true", "yes")
 TIMEOUT = int(os.getenv("OCR_FORWARD_TIMEOUT", 30))
 

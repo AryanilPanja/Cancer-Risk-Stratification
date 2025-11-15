@@ -97,18 +97,8 @@ services:
     networks:
       backend_net:
 
-  mongo:
-    image: mongo:5
-    ports:
-      - "27018:27017"
-    volumes:
-      - ./mongo-data:/data/db
-    networks:
-      backend_net:
-
 volumes:
   pgdata:
-  mongodb_data:
 
 networks:
   backend_net:
