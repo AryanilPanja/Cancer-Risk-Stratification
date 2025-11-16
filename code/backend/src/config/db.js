@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-require('dotenv').config({ path: __dirname + '/../../.env' }); // CORRECT PATH
+require('dotenv').config({ path: __dirname + '/../../../.env' }); // CORRECT PATH
 console.log("MONGO_URI =", process.env.MONGO_URI);
 
 
