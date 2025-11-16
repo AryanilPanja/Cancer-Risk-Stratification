@@ -1,6 +1,5 @@
 import os
 import time
-import re
 import requests
 import psycopg2
 import uvicorn
@@ -10,6 +9,9 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import MongoClient, errors as pymongo_errors
 
+# -------------------------------
+# Load environment variables
+# -------------------------------
 load_dotenv()
 
 OLLAMA_EMBED_URL = os.getenv("OLLAMA_EMBED_URL", "http://localhost:11434/api/embeddings")
@@ -17,14 +19,15 @@ EMBED_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
 EMBED_DIM = int(os.getenv("EMBED_DIM", 384))
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = int(os.getenv("DB_PORT", 5433))   # <-- configurable Postgres port
 DB_NAME = os.getenv("DB_NAME", "rag_db")
 DB_USER = os.getenv("DB_USER", "postgres")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "yourpassword")
-
 RETRIEVER_PORT = int(os.getenv("RETRIEVER_PORT", 9000))
 BIOBERT_API = os.getenv("BIOBERT_API", "http://127.0.0.1:8000/ask")
-RISK_QUESTION = os.getenv("RISK_QUESTION", "Assess the risk of cervical cancer based on this report")
+RISK_QUESTION = os.getenv(
+    "RISK_QUESTION",
+    "Assess the risk of cervical cancer based on this report"
+)
 CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", 500))
 TOP_K = int(os.getenv("TOP_K", 3))
 
@@ -34,14 +37,18 @@ TOP_K = int(os.getenv("TOP_K", 3))
 MONGO_URI = os.getenv("MONGO_URI")
 mongo_client = None
 mongo_db = None
+patients_col = None
 reports_col = None
+users_col = None
 
 try:
     print("[Retriever] Attempting MongoDB Atlas connection...")
     mongo_client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
     mongo_client.admin.command('ping')
     mongo_db = mongo_client.get_database("cancer_db")
+    patients_col = mongo_db.get_collection("patients")
     reports_col = mongo_db.get_collection("reports")
+    users_col = mongo_db.get_collection("users")
     print("[Retriever] MongoDB Atlas connected successfully.")
 except pymongo_errors.ServerSelectionTimeoutError as e:
     print(f"[Retriever] CRITICAL MONGODB ERROR: {e}")
@@ -73,6 +80,7 @@ def embed_text(texts):
     else:
         embeddings = raw["embeddings"]
 
+    # Replace empty embeddings with zero vectors
     fixed_embeddings = []
     for emb in embeddings:
         if not emb or len(emb) == 0:
@@ -87,11 +95,7 @@ def embed_text(texts):
 def get_conn():
     try:
         return psycopg2.connect(
-            host=DB_HOST,
-            port=DB_PORT,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD
+            host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD
         )
     except psycopg2.OperationalError as e:
         print(f"[Retriever] CRITICAL POSTGRES ERROR: {e}")
@@ -128,9 +132,12 @@ def chunks_from_text(text: str):
     text = text.strip()
     if not text:
         return []
-    # Remove punctuation and split by whitespace
-    words = [re.sub(r'[^\w]', '', w) for w in text.split()]
-    return [w for w in words if w]
+    # This splits the text by whitespace and returns a list of individual words.
+    words = text.split()
+    # You might want to remove punctuation if you do this
+    import re
+    cleaned_words = [re.sub(r'[^\w]', '', word) for word in words]
+    return [w for w in cleaned_words if w]
 
 # -------------------------------
 # Store embeddings
@@ -162,12 +169,14 @@ def store_embeddings(doc_id: str, text: str):
     return inserted
 
 # -------------------------------
-# Retrieve top-k similar chunks
+# Retrieve top-k similar chunks based on question embedding
 # -------------------------------
 def retrieve_similar_chunks(query_text: str, doc_id: str, top_k: int = TOP_K):
+    # 1) Embed the question
     q_emb = embed_text([query_text])[0]
     q_emb_str = "[" + ",".join(str(float(x)) for x in q_emb) + "]"
 
+    # 2) Query Postgres for closest chunks
     conn = get_conn()
     cur = conn.cursor()
     sql = f"""
@@ -182,7 +191,11 @@ def retrieve_similar_chunks(query_text: str, doc_id: str, top_k: int = TOP_K):
     cur.close()
     conn.close()
 
-    return [row[0] for row in rows] if rows else []
+    if not rows:
+        print(f"[Retriever] No matching chunks for doc_id={doc_id}")
+        return []
+
+    return [row[0] for row in rows]
 
 # -------------------------------
 # Call BioBERT LLM
@@ -215,49 +228,66 @@ def health():
 @app.post("/analyze")
 def analyze_report(request: AnalyzeRequest):
     if reports_col is None:
-        raise HTTPException(status_code=503, detail="MongoDB Atlas connection failed.")
+         raise HTTPException(status_code=503, detail="MongoDB Atlas connection failed.")
 
-    report_text = request.text.strip()
-    if not report_text:
-        raise HTTPException(status_code=400, detail="Empty text provided")
+    try:
+        report_text = request.text.strip()
+        if not report_text:
+            raise HTTPException(status_code=400, detail="Empty text provided")
 
-    # Store raw report in MongoDB Atlas
-    report_doc = {"text": report_text, "created_at": time.time(), "status": "pending"}
-    report_id = reports_col.insert_one(report_doc).inserted_id
-    doc_id = str(report_id)
+        # 0) Store raw report in MongoDB Atlas
+        report_doc = {
+            "text": report_text,
+            "created_at": time.time(),
+            "status": "pending"
+        }
+        report_id = reports_col.insert_one(report_doc).inserted_id
+        doc_id = str(report_id)
 
-    # Store report chunks embeddings in Postgres
-    count = store_embeddings(doc_id, report_text)
+        # 1) Store report chunks embeddings in Postgres
+        count = store_embeddings(doc_id, report_text)
 
-    # Retrieve top-k similar chunks
-    top_chunks = retrieve_similar_chunks(RISK_QUESTION, doc_id, top_k=TOP_K)
-    context = "\n".join(top_chunks) if top_chunks else report_text[:2000]
+        # 2) Embed question and retrieve top 3 similar chunks
+        top_chunks = retrieve_similar_chunks(RISK_QUESTION, doc_id, top_k=TOP_K)
+        if not top_chunks:
+            context = report_text[:2000]  # fallback
+        else:
+            context = "\n".join(top_chunks)
 
-    # BioBERT inference
-    result = ask_biobert(context, RISK_QUESTION)
-    answer = result.get("answer", "No answer").lower()
+        # 3) BioBERT inference
+        result = ask_biobert(context, RISK_QUESTION)
+        answer = result.get("answer", "No answer").lower()
 
-    # Scoring
-    if "high" in answer:
-        score = 90.0
-    elif "moderate" in answer or "intermediate" in answer:
-        score = 60.0
-    elif "low" in answer:
-        score = 20.0
-    else:
-        score = 50.0
+        # 4) Scoring
+        if "high" in answer:
+            score = 90.0
+        elif "moderate" in answer or "intermediate" in answer:
+            score = 60.0
+        elif "low" in answer:
+            score = 20.0
+        else:
+            score = 50.0
 
-    return {
-        "doc_id": doc_id,
-        "stored_chunks": count,
-        "answer": answer,
-        "score": score,
-        "context_preview": context[:1000]
-    }
+        return {
+            "doc_id": doc_id,
+            "stored_chunks": count,
+            "answer": answer,
+            "score": score,
+            "context_preview": context[:1000]
+        }
+
+    except ConnectionError as e:
+        print(f"[Retriever] Connection Error: {e}")
+        raise HTTPException(status_code=503, detail="Database connectivity issue.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[Retriever] UNEXPECTED ERROR: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 # -------------------------------
 # Run service
 # -------------------------------
 if __name__ == "__main__":
-    print(f"[Retriever] Starting service on 127.0.0.1:{RETRIEVER_PORT} connecting to Postgres:{DB_PORT}")
+    print(f"[Retriever] Starting service on 127.0.0.1:{RETRIEVER_PORT}")
     uvicorn.run(app, host="127.0.0.1", port=RETRIEVER_PORT)
