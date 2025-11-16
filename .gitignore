@@ -21,3 +21,8 @@ venv/
 
 #Trash
 Trash/
+
+code/backend/node_modules/
+code/frontend/node_modules/
+code/backend/.env
+code/backend/src/venv
