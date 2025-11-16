@@ -1,12 +1,12 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5001/api',
+  baseURL: '/api',
 });
 
 // Automatically attach token if logged in
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('authToken');
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
   }

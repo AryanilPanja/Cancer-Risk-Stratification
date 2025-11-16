@@ -5,6 +5,12 @@ const reportSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Patient'
   },
+  uploadedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  originalReportUrl: String,
+  ocrText: String,
   normalizedScore: Number,
   llmGeneratedReport: String,
   status: { type: String, default: 'Pending' },

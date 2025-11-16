@@ -1,30 +1,28 @@
-version: "3.9"
-
 services:
   node-backend:
-    image: snigdha1403/cancer-risk-backend:latest
-    # Uncomment the build section below if you want to rebuild instead of pulling the image
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     ports:
       - "5001:5001"
     working_dir: /app
     command: >
       sh -c "npm install &&
              node src/server.js"
-    # Added 'ocr' and 'retriever' to ensure they start before the backend tries to connect
     depends_on:
-      - postgres
-      - ocr
-      - retriever
+      postgres:
+        condition: service_started
+      ocr:
+        condition: service_started
+      retriever:
+        condition: service_started
+      mongo:
+        condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
     environment:
-      # CRITICAL FIX: Directs the Node backend to use the Docker service name 'ocr' (port 7000)
       - OCR_API=http://ocr:7000/ocr 
-      # Directs the Node backend to use the Docker service name 'retriever' (port 9000)
       - RETRIEVER_API=http://retriever:9000/analyze
       - MONGO_URI=mongodb://mongo:27017/cancer-risk
       - JWT_SECRET=your-jwt-secret
@@ -32,18 +30,19 @@ services:
       backend_net:
 
   retriever:
-    image: snigdha1403/cancer-risk-python:retriever
-    # Uncomment the build section below if you want to rebuild instead of pulling the image
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.python
-    #   target: retriever
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      target: retriever
     ports:
       - "8500:9000"
     working_dir: /app
     command: ["python", "retrieverService.py"]
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
     volumes:
       - ./backend/src/services:/app
     environment:
@@ -58,14 +57,12 @@ services:
       backend_net:
 
   llm:
-    image: snigdha1403/cancer-risk-python:llm
-    # Uncomment the build section below if you want to rebuild instead of pulling the image
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.python
-    #   target: llm
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      target: llm
     ports:
-      - "8001:8000" # Host port changed from 8000 to 8001
+      - "8001:8000"
     working_dir: /app
     command: ["python", "llmService.py"]
     volumes:
@@ -74,12 +71,10 @@ services:
       backend_net:
 
   ocr:
-    image: snigdha1403/cancer-risk-python:ocr
-    # Uncomment the build section below if you want to rebuild instead of pulling the image
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.python
-    #   target: ocr
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+      target: ocr
     ports:
       - "7000:7000"
     working_dir: /app
@@ -99,11 +94,54 @@ services:
       - "5434:5432" # Host port changed from 5433 to 5434
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       backend_net:
 
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_DATABASE: cancer-risk
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_net
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - backend_net
+
+  frontend:
+    build:
+      context: ./frontend_app
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - node-backend
+    networks:
+      - backend_net
+
 volumes:
   pgdata:
+  mongo-data:
+  ollama-data:
 
 networks:
   backend_net:

@@ -6,16 +6,25 @@ const doctorController = {
     getAllReports: async (req, res) => {
         try {
             const reports = await Report.find()
-                .populate('patient', 'name')
+                .populate('patient', 'name patientId gender dateOfBirth')
+                .populate('uploadedBy', 'username email')
                 .sort({ normalizedScore: -1 })
-                .select('patient normalizedScore llmGeneratedReport status doctorVerification');
+                .select('patient uploadedBy normalizedScore llmGeneratedReport ocrText status doctorVerification createdAt originalReportUrl');
 
             const formattedReports = reports.map(report => ({
                 reportId: report._id,
                 patientName: report.patient ? report.patient.name : 'Unknown',
+                patientId: report.patient ? report.patient.patientId : 'N/A',
+                patientGender: report.patient?.gender || 'N/A',
+                patientDOB: report.patient?.dateOfBirth || null,
+                uploadedBy: report.uploadedBy ? report.uploadedBy.username : 'Unknown',
+                uploaderEmail: report.uploadedBy?.email || 'N/A',
                 score: report.normalizedScore || 0,
                 llmReport: report.llmGeneratedReport || 'N/A',
+                ocrText: report.ocrText || 'N/A',
+                reportUrl: report.originalReportUrl || '',
                 status: report.status,
+                uploadDate: report.createdAt,
                 isReviewed: report.doctorVerification?.isVerified || false,
                 doctorScore: report.doctorVerification?.doctorScore || null,
                 doctorComments: report.doctorVerification?.doctorComments || ''

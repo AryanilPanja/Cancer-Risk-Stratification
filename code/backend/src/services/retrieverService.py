@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 
-OLLAMA_EMBED_URL = "http://localhost:11434/api/embeddings"
+OLLAMA_EMBED_URL = os.getenv("OLLAMA_EMBED_URL", "http://ollama:11434/api/embeddings")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 
 # -------------------------------
@@ -257,4 +257,4 @@ def analyze_report(request: AnalyzeRequest):
 # -------------------------------
 if __name__ == "__main__":
     print(f"[Retriever] Starting service on 127.0.0.1:{RETRIEVER_PORT}")
-    uvicorn.run(app, host="127.0.0.1", port=RETRIEVER_PORT)
+    uvicorn.run(app, host="0.0.0.0", port=RETRIEVER_PORT)

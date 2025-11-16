@@ -9,7 +9,7 @@ export const reportService = {
     const token = localStorage.getItem('authToken');
 
     try {
-      const response = await fetch('http://localhost:5001/api/pathologist/upload', {
+      const response = await fetch('/api/pathologist/upload', {
         method: 'POST',
         headers: {
           // ❌ Do NOT manually set Content-Type for FormData; browser handles it automatically
