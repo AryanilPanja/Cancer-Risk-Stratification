@@ -17,7 +17,18 @@ dotenv.config();
 const app = express();
 
 // Connect to database
-connectDB();
+connectDB()
+    .then(() => {
+        // Start server only after DB connection is successful
+        const PORT = process.env.PORT || 5001;
+        app.listen(PORT, () => {
+            console.log(`✅ Server running on port ${PORT}`);
+        });
+    })
+    .catch((error) => {
+        // If connectDB() throws an error (though it already calls process.exit(1))
+        console.error('Failed to start server due to DB error:', error);
+    });
 
 // Middleware
 app.use(cors());
@@ -40,7 +51,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-    console.log(`✅ Server running on port ${PORT}`);
-});
+// const PORT = process.env.PORT || 5001;
+// app.listen(PORT, () => {
+//     console.log(`✅ Server running on port ${PORT}`);
+// });
