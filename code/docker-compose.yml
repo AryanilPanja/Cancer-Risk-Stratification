@@ -10,7 +10,9 @@ services:
     ports:
       - "5001:5001"
     working_dir: /app
-    command: ["node", "src/server.js"]
+    command: >
+      sh -c "npm install &&
+             node src/server.js"
     # Added 'ocr' and 'retriever' to ensure they start before the backend tries to connect
     depends_on:
       - postgres
@@ -18,11 +20,14 @@ services:
       - retriever
     volumes:
       - ./backend:/app
+      - /app/node_modules
     environment:
       # CRITICAL FIX: Directs the Node backend to use the Docker service name 'ocr' (port 7000)
       - OCR_API=http://ocr:7000/ocr 
       # Directs the Node backend to use the Docker service name 'retriever' (port 9000)
       - RETRIEVER_API=http://retriever:9000/analyze
+      - MONGO_URI=mongodb://mongo:27017/cancer-risk
+      - JWT_SECRET=your-jwt-secret
     networks:
       backend_net:
 
