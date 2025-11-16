@@ -1,0 +1,123 @@
+services:
+  node-backend:
+    image: madhansaikrishna/node-backend:latest
+    ports:
+      - "5001:5001"
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_started
+      ocr:
+        condition: service_started
+      retriever:
+        condition: service_started
+      mongo:
+        condition: service_healthy
+    environment:
+      - OCR_API=http://ocr:7000/ocr 
+      - RETRIEVER_API=http://retriever:9000/analyze
+      - MONGO_URI=mongodb://mongo:27017/cancer-risk
+      - JWT_SECRET=your-jwt-secret
+    networks:
+      backend_net:
+
+  retriever:
+    image: madhansaikrishna/retriever:latest
+    ports:
+      - "8500:9000"
+    working_dir: /app
+    command: ["python", "retrieverService.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=chunks_db
+      - BIOBERT_API=http://llm:8000/ask
+      - RETRIEVER_PORT=9000
+    networks:
+      backend_net:
+
+  llm:
+    image: madhansaikrishna/llm:latest
+    ports:
+      - "8001:8000"
+    working_dir: /app
+    command: ["python", "llmService.py"]
+    networks:
+      backend_net:
+
+  ocr:
+    image: madhansaikrishna/ocr:latest
+    ports:
+      - "7000:7000"
+    working_dir: /app
+    command: ["python", "ocrService.py"]
+    networks:
+      backend_net:
+
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: chunks_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      backend_net:
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_DATABASE: cancer-risk
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend_net
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - backend_net
+
+  frontend:
+    image: madhansaikrishna/frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - node-backend
+    networks:
+      - backend_net
+
+volumes:
+  pgdata:
+  mongo-data:
+  ollama-data:
+
+networks:
+  backend_net:
+    driver: bridge
