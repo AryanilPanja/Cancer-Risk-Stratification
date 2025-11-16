@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const connectDB = require('./config/db');
 const path = require('path');
+const dotenv = require('dotenv');
+
+// Load environment variables from project root .env BEFORE requiring modules that depend on them
+dotenv.config({ path: path.resolve(__dirname, '../../..', '.env') });
+
+const connectDB = require('./config/db');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
