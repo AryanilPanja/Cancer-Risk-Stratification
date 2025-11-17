@@ -356,7 +356,11 @@ curl http://localhost:8001/health
 ##  Authors
 
 - AryanilPanja - [GitHub](https://github.com/AryanilPanja)
-- 
+- AnanyaVishalHalgatti - [GitHub](https://github.com/Avh09)
+- PriyanshiGupta - [GitHub](https://github.com/priyanshi123098)
+- ChamarthyMadhanSaiKrishna - [GitHub](https://github.com/MadhanSaiKrishna)
+- SrimadTirumalaPeddintiSnigdha - [GitHub](https://github.com/S1403-6)
+- BasireddyKhyathiSri - [GitHub](https://github.com/Khyathi001)
 
 ##  Support
 
