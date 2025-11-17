@@ -17,6 +17,9 @@ const patientSchema = new mongoose.Schema({
     gender: {
         type: String
     },
+    phoneNumber: {
+        type: String
+    },
     reports: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Report'

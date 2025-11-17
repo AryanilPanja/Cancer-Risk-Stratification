@@ -7,6 +7,7 @@ import { Home } from './pages/Home';
 import {Login} from './pages/Login';
 import  Register from './pages/Register';
 import { PathologistDashboard} from './pages/PathologistDashboard';
+import DoctorDashboard from './pages/DoctorDashboard';
 import './App.css';
 
 function App() {
@@ -31,6 +32,15 @@ function App() {
               element={
                 <ProtectedRoute requiredRole="pathologist">
                   <PathologistDashboard/>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute requiredRole="doctor">
+                  <DoctorDashboard />
                 </ProtectedRoute>
               }
             />
