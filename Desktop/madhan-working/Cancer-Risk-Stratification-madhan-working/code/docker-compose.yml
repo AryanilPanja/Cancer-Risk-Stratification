@@ -16,15 +16,13 @@ services:
         condition: service_started
       retriever:
         condition: service_started
-      mongo:
-        condition: service_healthy
     volumes:
       - ./backend:/app
       - /app/node_modules
     environment:
       - OCR_API=http://ocr:7000/ocr 
       - RETRIEVER_API=http://retriever:9000/analyze
-      - MONGO_URI=mongodb://mongo:27017/cancer-risk
+      - MONGO_URI=mongodb+srv://bananascrazy2005_db_user:RH2H727dtmkyAZnQ@dsi.wfpopdy.mongodb.net/cancer-risk?retryWrites=true&w=majority
       - JWT_SECRET=your-jwt-secret
     networks:
       backend_net:
@@ -104,22 +102,6 @@ services:
     networks:
       backend_net:
 
-  mongo:
-    image: mongo:latest
-    environment:
-      MONGO_INITDB_DATABASE: cancer-risk
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - backend_net
-
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -142,7 +124,6 @@ services:
 
 volumes:
   pgdata:
-  mongo-data:
   ollama-data:
 
 networks:

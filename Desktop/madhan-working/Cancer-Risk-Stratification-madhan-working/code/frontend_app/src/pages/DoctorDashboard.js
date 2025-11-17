@@ -226,6 +226,16 @@ function DoctorDashboard() {
                             ✓ Verify
                           </button>
                         )}
+                        {r.reportUrl && (
+                          <a 
+                            href={`${process.env.REACT_APP_API_URL}${r.reportUrl}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="view-report-link"
+                          >
+                            View Report
+                          </a>
+                        )}
                       </div>
                     </td>
                   </tr>
