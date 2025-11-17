@@ -152,7 +152,7 @@ function DoctorDashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-number">{reports.filter(r => r.score > 0.7).length}</div>
-          <div className="stat-label">High Risk (&gt;70%)</div>
+          <div className="stat-label">High Risk (&gt;7)</div>
         </div>
       </div>
 
@@ -195,7 +195,7 @@ function DoctorDashboard() {
                     <td>{r.patientId}</td>
                     <td>
                       <span className={`score-badge ${r.score > 0.7 ? 'high' : r.score > 0.4 ? 'medium' : 'low'}`}>
-                        {(r.score).toFixed(1)}%
+                        {(r.score).toFixed(1)}
                       </span>
                     </td>
                     <td>{new Date(r.uploadDate).toLocaleDateString()}</td>
@@ -244,10 +244,10 @@ function DoctorDashboard() {
                             
                             <div className="detail-section">
                               <h4>📊 Risk Assessment</h4>
-                              <p><strong>AI Risk Score:</strong> <span className={`score-value ${r.score > 0.7 ? 'high' : r.score > 0.4 ? 'medium' : 'low'}`}>{(r.score * 100).toFixed(1)}%</span></p>
+                              <p><strong>AI Risk Score:</strong> <span className={`score-value ${r.score > 0.7 ? 'high' : r.score > 0.4 ? 'medium' : 'low'}`}>{(r.score).toFixed(1)}</span></p>
                               {r.isReviewed && (
                                 <>
-                                  <p><strong>Doctor Score:</strong> <span className="score-value">{r.doctorScore ? (r.doctorScore * 100).toFixed(1) + '%' : 'N/A'}</span></p>
+                                  <p><strong>Doctor Score:</strong> <span className="score-value">{r.doctorScore ? (r.doctorScore * 10).toFixed(1) : 'N/A'}</span></p>
                                   <p><strong>Doctor Comments:</strong> {r.doctorComments || 'None'}</p>
                                 </>
                               )}
