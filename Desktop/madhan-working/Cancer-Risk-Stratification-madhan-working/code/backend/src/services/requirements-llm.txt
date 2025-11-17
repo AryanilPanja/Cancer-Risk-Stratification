@@ -1,0 +1,12 @@
+# Add the PyTorch CPU-only index
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# For the web server
+fastapi
+uvicorn
+
+# For the AI model pipeline
+transformers
+
+# Explicitly install the CPU-only version of torch
+torch

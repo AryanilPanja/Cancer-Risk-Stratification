@@ -1,0 +1,258 @@
+.upload-container {
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f5f5f5;
+}
+
+.upload-card {
+  background: white;
+  border-radius: 4px;
+  padding: 3rem 2.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 600px;
+  border: 1px solid #e0e0e0;
+}
+
+.upload-card h1 {
+  text-align: center;
+  color: #000000;
+  margin-bottom: 2rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.upload-form {
+  margin-bottom: 2rem;
+}
+
+.file-input-wrapper {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.file-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  border: 2px dashed #d0d0d0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fafafa;
+}
+
+.file-label:hover {
+  border-color: #000000;
+  background: #f5f5f5;
+}
+
+.upload-icon {
+  font-size: 4rem;
+  font-weight: 300;
+  color: #999999;
+  line-height: 1;
+}
+
+.upload-text {
+  text-align: center;
+  color: #000000;
+  font-weight: 500;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-info {
+  background: #f8f8f8;
+  padding: 1rem;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  border: 1px solid #e0e0e0;
+}
+
+.file-info p {
+  margin: 0.5rem 0;
+  color: #000000;
+  font-size: 0.9rem;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #c33;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  background: #efe;
+  color: #2c8a2c;
+  padding: 1rem;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #27ae60;
+  font-size: 0.9rem;
+}
+
+.progress-container {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #000000;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.report-details {
+  background: #f8f8f8;
+  padding: 1rem;
+  border-radius: 2px;
+  margin-bottom: 1rem;
+  border-left: 3px solid #000000;
+  border: 1px solid #e0e0e0;
+}
+
+.report-details h3 {
+  color: #000000;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.report-details p {
+  color: #000000;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.info-text {
+  font-size: 0.85rem;
+  color: #666666;
+  font-style: italic;
+  margin-top: 0.75rem;
+}
+
+.upload-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-btn:hover:not(:disabled) {
+  background: #333333;
+}
+
+.upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-info {
+  background: #f8f8f8;
+  padding: 1.5rem;
+  border-radius: 2px;
+  border: 1px solid #e0e0e0;
+}
+
+.upload-info h3 {
+  color: #000000;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.upload-info ul {
+  list-style: none;
+  padding: 0;
+}
+
+.upload-info li {
+  padding: 0.5rem 0;
+  color: #000000;
+  border-bottom: 1px solid #e0e0e0;
+  padding-left: 1rem;
+  font-size: 0.9rem;
+}
+
+.upload-info li:last-child {
+  border-bottom: none;
+}
+
+.upload-info li:before {
+  content: "✓ ";
+  color: #000000;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .upload-container {
+    padding: 1rem;
+  }
+
+  .upload-card {
+    padding: 2rem 1.5rem;
+  }
+
+  .upload-card h1 {
+    font-size: 1.25rem;
+  }
+}
+
+.upload-info li:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 768px) {
+  .upload-card {
+    padding: 1.5rem;
+  }
+
+  .upload-card h1 {
+    font-size: 1.5rem;
+  }
+
+  .file-label {
+    padding: 1.5rem;
+  }
+
+  .upload-icon {
+    font-size: 2rem;
+  }
+}

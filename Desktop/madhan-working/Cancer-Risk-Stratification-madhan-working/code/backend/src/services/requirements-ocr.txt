@@ -1,0 +1,12 @@
+# For the web server
+fastapi
+uvicorn
+
+# For making requests (to retriever)
+requests
+
+# For reading PDF files (fitz)
+PyMuPDF
+
+# For handling FastAPI file uploads
+python-multipart

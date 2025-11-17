@@ -1,0 +1,10 @@
+# For the web server
+fastapi
+uvicorn
+
+# For calling Ollama and the LLM service
+requests
+
+# For connecting to the PostgreSQL/PGVector database
+# (using -binary avoids needing build tools in Docker)
+psycopg2-binary
