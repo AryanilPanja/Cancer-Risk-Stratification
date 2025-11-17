@@ -1,9 +1,8 @@
 services:
   node-backend:
-    image: madhansaikrishna/node-backend:latest
+    image: phoby/cancer-backend:latest
     ports:
       - "5001:5001"
-    working_dir: /app
     depends_on:
       postgres:
         condition: service_started
@@ -11,28 +10,26 @@ services:
         condition: service_started
       retriever:
         condition: service_started
-      mongo:
-        condition: service_healthy
     environment:
-      - OCR_API=http://ocr:7000/ocr 
+      - OCR_API=http://ocr:7000/ocr
       - RETRIEVER_API=http://retriever:9000/analyze
-      - MONGO_URI=mongodb://mongo:27017/cancer-risk
+      - MONGO_URI=mongodb+srv://bananascrazy2005_db_user:RH2H727dtmkyAZnQ@dsi.wfpopdy.mongodb.net/cancer-risk?retryWrites=true&w=majority
       - JWT_SECRET=your-jwt-secret
     networks:
       backend_net:
 
   retriever:
-    image: madhansaikrishna/retriever:latest
+    image: phoby/cancer-retriever:latest
     ports:
       - "8500:9000"
-    working_dir: /app
-    command: ["python", "retrieverService.py"]
     depends_on:
       postgres:
         condition: service_healthy
       ollama:
         condition: service_started
     environment:
+      - OLLAMA_EMBED_URL=http://ollama:11434/api/embed
+      - EMBED_DIM=768
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=postgres
@@ -44,20 +41,16 @@ services:
       backend_net:
 
   llm:
-    image: madhansaikrishna/llm:latest
+    image: phoby/cancer-llm:latest
     ports:
       - "8001:8000"
-    working_dir: /app
-    command: ["python", "llmService.py"]
     networks:
       backend_net:
 
   ocr:
-    image: madhansaikrishna/ocr:latest
+    image: phoby/cancer-ocr:latest
     ports:
       - "7000:7000"
-    working_dir: /app
-    command: ["python", "ocrService.py"]
     networks:
       backend_net:
 
@@ -79,22 +72,6 @@ services:
     networks:
       backend_net:
 
-  mongo:
-    image: mongo:latest
-    environment:
-      MONGO_INITDB_DATABASE: cancer-risk
-    ports:
-      - "27018:27017"
-    volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - backend_net
-
   ollama:
     image: ollama/ollama:latest
     ports:
@@ -105,17 +82,18 @@ services:
       - backend_net
 
   frontend:
-    image: madhansaikrishna/frontend:latest
+    image: phoby/cancer-frontend:latest
     ports:
       - "3000:80"
     depends_on:
       - node-backend
+    environment:
+      - VITE_API_URL=http://localhost:5001
     networks:
       - backend_net
 
 volumes:
   pgdata:
-  mongo-data:
   ollama-data:
 
 networks:
