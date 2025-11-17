@@ -1,6 +1,7 @@
 services:
   node-backend:
     image: phoby/cancer-backend:latest
+    command: ["node", "src/server.js"]
     ports:
       - "5001:5001"
     depends_on:
@@ -27,6 +28,8 @@ services:
         condition: service_healthy
       ollama:
         condition: service_started
+      ollama-setup:
+        condition: service_completed_successfully
     environment:
       - OLLAMA_EMBED_URL=http://ollama:11434/api/embed
       - EMBED_DIM=768
@@ -80,6 +83,25 @@ services:
       - ollama-data:/root/.ollama
     networks:
       - backend_net
+
+  ollama-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      - ollama
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...' &&
+        until curl -f http://ollama:11434/api/tags > /dev/null 2>&1; do
+          echo 'Ollama not ready, waiting 5 seconds...'
+          sleep 5
+        done &&
+        echo 'Ollama is ready, pulling nomic-embed-text model...' &&
+        curl -X POST http://ollama:11434/api/pull -H 'Content-Type: application/json' -d '{\"name\": \"nomic-embed-text\"}' &&
+        echo 'Model pulled successfully!'
+      "
+    networks:
+      - backend_net
+    restart: "no"
 
   frontend:
     image: phoby/cancer-frontend:latest

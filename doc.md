@@ -19,23 +19,3 @@
 4. They click on the name for further reports, see and verify them and then click the chheckbox for verification complete or not.
 5. There are couple of problems with Concurrency(link) that will be discusses below.
 
-### Admin Team
-1. Lite
-
-## Problems:
-### Concurrency
-1. 
-### Report Allocation
-1. 
-### Patient Unique Identifiers
-1. 
-### Level of Granularity Expected
-1. 
-
-
-
-We need to :
-1. Somehow take in the remark of the doctors and then assess our evaluation based on that, and incorporate the workflow in that.
-2. We need to automate as many systems as possible.
-3. Because the back-end that might be taken must have support and somehow self-evaluate.
-4. make some documentation
