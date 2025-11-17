@@ -1,0 +1,123 @@
+services:
+  node-backend:
+    image: phoby/cancer-backend:latest
+    command: ["node", "src/server.js"]
+    ports:
+      - "5001:5001"
+    depends_on:
+      postgres:
+        condition: service_started
+      ocr:
+        condition: service_started
+      retriever:
+        condition: service_started
+    environment:
+      - OCR_API=http://ocr:7000/ocr
+      - RETRIEVER_API=http://retriever:9000/analyze
+      - MONGO_URI=mongodb+srv://bananascrazy2005_db_user:RH2H727dtmkyAZnQ@dsi.wfpopdy.mongodb.net/cancer-risk?retryWrites=true&w=majority
+      - JWT_SECRET=your-jwt-secret
+    networks:
+      backend_net:
+
+  retriever:
+    image: phoby/cancer-retriever:latest
+    ports:
+      - "8500:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+      ollama-setup:
+        condition: service_completed_successfully
+    environment:
+      - OLLAMA_EMBED_URL=http://ollama:11434/api/embed
+      - EMBED_DIM=768
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=yourpassword
+      - DB_NAME=chunks_db
+      - BIOBERT_API=http://llm:8000/ask
+      - RETRIEVER_PORT=9000
+    networks:
+      backend_net:
+
+  llm:
+    image: phoby/cancer-llm:latest
+    ports:
+      - "8001:8000"
+    networks:
+      backend_net:
+
+  ocr:
+    image: phoby/cancer-ocr:latest
+    ports:
+      - "7000:7000"
+    networks:
+      backend_net:
+
+  postgres:
+    image: ankane/pgvector:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: chunks_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      backend_net:
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11435:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - backend_net
+
+  ollama-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      - ollama
+    command: >
+      sh -c "
+        echo 'Waiting for Ollama to be ready...' &&
+        until curl -f http://ollama:11434/api/tags > /dev/null 2>&1; do
+          echo 'Ollama not ready, waiting 5 seconds...'
+          sleep 5
+        done &&
+        echo 'Ollama is ready, pulling nomic-embed-text model...' &&
+        curl -X POST http://ollama:11434/api/pull -H 'Content-Type: application/json' -d '{\"name\": \"nomic-embed-text\"}' &&
+        echo 'Model pulled successfully!'
+      "
+    networks:
+      - backend_net
+    restart: "no"
+
+  frontend:
+    image: phoby/cancer-frontend:latest
+    ports:
+      - "3000:80"
+    depends_on:
+      - node-backend
+    environment:
+      - VITE_API_URL=http://localhost:5001
+    networks:
+      - backend_net
+
+volumes:
+  pgdata:
+  ollama-data:
+
+networks:
+  backend_net:
+    driver: bridge
