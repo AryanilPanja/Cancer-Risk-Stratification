@@ -262,14 +262,14 @@ function DoctorDashboard() {
                           </div>
 
                           <div className="detail-section full-width">
-                            <h4>🤖 LLM Analysis Report</h4>
+                            <h4>Summary</h4>
                             <div className="llm-report-content">
                               {r.llmReport}
                             </div>
                           </div>
 
                           <div className="detail-section full-width">
-                            <h4>📝 OCR Extracted Text</h4>
+                            <h4>Extracted Text</h4>
                             <div className="ocr-text-content">
                               {r.ocrText && r.ocrText.length > 0 ? r.ocrText : 'No OCR text available'}
                             </div>
